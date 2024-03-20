@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -6,7 +7,7 @@ const mongoose = require('mongoose');
 const multer = require('multer');
 const  { graphqlHTTP } = require('express-graphql');
 const auth = require('./meddleware/auth');
-
+const { clearImage } = require('./util/file');
 
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolver = require('./graphql/resolver');
@@ -59,6 +60,20 @@ app.use((req, res, next) => {
 
 app.use(auth);
 
+app.put('/post-image',(req,res,next)=>{
+  if (!req.isAuth){
+    throw new Error('Not authientication')
+  }
+  if (!req.file){
+    return res.status(200).json({message: 'Not file provided!'});
+  }
+  if (req.body.oldPath){
+    clearImage(req.body.oldPath);
+  }
+  return res.status(201).json({message: 'File stored.', filePath: req.file.path});
+});
+
+
 app.use(
   '/graphql',
   graphqlHTTP({
@@ -91,3 +106,4 @@ mongoose
     app.listen(8080);
   })
     .catch(err => console.log(err));
+
